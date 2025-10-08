@@ -4,6 +4,8 @@ A secure, user-friendly password manager web application built with Next.js and 
 
 <img src="./public/preview.png" width="1920px"/>
 
+### **Demo Video** : [Link](https://drive.google.com/file/d/1BQtiSvU3f1ptdAJvI05K9a9rrUapF7GC/view?usp=drivesdk)
+
 ---
 
 ## Table of Contents
