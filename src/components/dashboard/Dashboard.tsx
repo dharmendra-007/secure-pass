@@ -22,6 +22,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
+function isErrorWithMessage(error: unknown): error is { message: string, name?: string } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error).message === 'string'
+  );
+}
+
 export function Dashboard() {
   const auth = useAuth();
   const router = useRouter();
@@ -41,12 +50,12 @@ export function Dashboard() {
   useEffect(() => {
     if (!auth.isAuthenticated) return;
     
-    // Cancel previous request if it exists
+    
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
     
-    // Create new abort controller for this request
+    
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
     
@@ -56,23 +65,28 @@ export function Dashboard() {
         setLoadingPasswords(true);
         const data = await passwordService.getAllPasswords(searchQuery);
         
-        // Only update if this request wasn't aborted
         if (!abortController.signal.aborted) {
           setPasswords(data);
         }
-      } catch (error: any) {
-        // Ignore abort errors
-        if (error.name === 'AbortError' || abortController.signal.aborted) {
+      } catch (error) { 
+        
+        if (isErrorWithMessage(error) && (error.name === 'AbortError' || abortController.signal.aborted)) {
           return;
         }
         
         console.error('Failed to fetch passwords:', error);
         
-        if (error.message.includes('Authentication required') || error.message.includes('Unauthorized')) {
-          toast.error('Session expired. Please log in again.');
-          auth.logout(); 
+        
+        if (isErrorWithMessage(error)) {
+            if (error.message.includes('Authentication required') || error.message.includes('Unauthorized')) {
+                toast.error('Session expired. Please log in again.');
+                auth.logout(); 
+            } else {
+                toast.error('Failed to load passwords');
+            }
         } else {
-          toast.error('Failed to load passwords');
+             
+             toast.error('An unknown error occurred while loading passwords');
         }
       } finally {
         if (!abortController.signal.aborted) {
@@ -83,11 +97,11 @@ export function Dashboard() {
     
     fetchPasswords();
     
-    // Cleanup function to abort on unmount or when dependencies change
+    
     return () => {
       abortController.abort();
     };
-  }, [searchQuery, refreshTrigger, auth.isAuthenticated]);
+  }, [searchQuery, refreshTrigger, auth.isAuthenticated, auth.logout]); 
 
   const handleLogout = () => {
     auth.logout(); 
@@ -95,7 +109,6 @@ export function Dashboard() {
   };
   
   const handleSearchExecute = (query: string) => {
-    // This updates the Dashboard's state only when the SearchBar's debounce completes
     setSearchQuery(query); 
   };
   
@@ -160,14 +173,14 @@ export function Dashboard() {
         <div className="flex items-center space-x-4">
           <AddPasswordForm onPasswordAdded={handlePasswordAdded} />
 
-          {/* Profile Dropdown */}
+          {}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-11 w-11 rounded-full p-0 bg-black">
                 <Avatar className="h-11 w-11 bg-[#111479]">
                   <AvatarImage src="/avatar.png" alt="Profile" />
                   <AvatarFallback className="text-white font-semibold">
-                    {/* Display the first letter of the full name */}
+                    {}
                     {currentUser?.fullName ? currentUser.fullName[0].toUpperCase() : <UserIcon className="h-4 w-4" />}
                   </AvatarFallback>
                 </Avatar>
